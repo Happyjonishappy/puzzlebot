@@ -1,1 +1,1 @@
-worker: python pazuchan.py
+worker: python puzzlebot.py

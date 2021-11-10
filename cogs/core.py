@@ -61,6 +61,8 @@ class Core(Cog):
         self.RANDOM_STATUSES = cursor.fetchall()
 
     async def change_status(self):
+        if len(self.RANDOM_STATUSES) == 0:
+            return
         wait_time = 0
         last_updated_status = datetime.now()
         while True:
