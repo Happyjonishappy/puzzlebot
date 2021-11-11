@@ -86,6 +86,7 @@ class Triplet(commands.Cog):
             clues = []
             while len(clues) < 3 and len(phrases) > 0:
                 random.shuffle(phrases)
+                random.shuffle(phrases)
                 clue = random.choice(phrases)
                 phrases.remove(clue)
                 clue = clue.replace(word, '?').strip().upper()

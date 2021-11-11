@@ -87,7 +87,7 @@ class Core(Cog):
         """Rolls a dice in NdN format."""
         dice = ''.join(dice).strip()
         if dice == '':
-            await ctx.send('Please specify NdN, e.g. ?roll 2d6')
+            await ctx.send(f'Please specify NdN, e.g. {self.bot.BOT_PREFIX}roll 2d6')
             return
         try:
             rolls, limit = map(int, dice.split('d'))

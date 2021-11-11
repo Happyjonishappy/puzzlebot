@@ -11,7 +11,7 @@ import discord
 from discord.ext.commands import Bot, has_permissions, CommandNotFound, has_any_role, command, ExtensionAlreadyLoaded, ExtensionNotFound, ExtensionFailed, ExtensionNotLoaded
 
 from cogs.core import Core
-from cogs.puzzlehunt import PuzzleHunt
+from cogs.puzzlehunt.puzzlehunt import PuzzleHunt
 from cogs.database import Database
 from cogs.trivia import Trivia
 from cogs.triplet import Triplet
@@ -115,14 +115,14 @@ if __name__ == '__main__':
         )
         if len(cogname) != 1 or cogname[0] not in bot.cogs.keys():
             embed.set_author(name=f"{bot.BOT_NAME} Commands:")
-            embed.add_field(name="?trivia", value="Test your trivia skills")
-            embed.add_field(name="?hunt", value="Join a running puzzle hunt")
-            embed.add_field(name="?roll NdN", value="Roll N dice each with N faces")
-            embed.add_field(name="?triplet", value="Try a triplet word puzzle")
-            embed.add_field(name="?layton", value="Try a puzzle from Professor Layton")
-            embed.add_field(name="?cryptic", value="Try a cryptic crossword clue")
-            embed.add_field(name="?codenames", value="Play Codenames")
-            embed.set_footer(text="Type `?<command> help` to see more details about each command.")
+            embed.add_field(name=f"{bot.BOT_PREFIX}trivia", value="Test your trivia skills")
+            embed.add_field(name=f"{bot.BOT_PREFIX}hunt", value="Join a running puzzle hunt")
+            embed.add_field(name=f"{bot.BOT_PREFIX}roll NdN", value="Roll N dice each with N faces")
+            embed.add_field(name=f"{bot.BOT_PREFIX}triplet", value="Try a triplet word puzzle")
+            embed.add_field(name=f"{bot.BOT_PREFIX}layton", value="Try a puzzle from Professor Layton")
+            embed.add_field(name=f"{bot.BOT_PREFIX}cryptic", value="Try a cryptic crossword clue")
+            embed.add_field(name=f"{bot.BOT_PREFIX}codenames", value="Play Codenames")
+            embed.set_footer(text=f"Type `{bot.BOT_PREFIX}<command> help` to see more details about each command.")
         else:
             embed.set_author(name=f"{bot.BOT_NAME} {cogname[0].strip().title()} Commands:")
         await ctx.send(embed=embed)

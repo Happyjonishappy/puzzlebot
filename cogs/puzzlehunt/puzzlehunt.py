@@ -148,14 +148,12 @@ class PuzzleHunt(commands.Cog):
         cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunts WHERE huntid = %s", (huntid,))
         matching_hunt = cursor.fetchone()
         if matching_hunt:
-            _, _, puzzlecount, huntname, theme, past, starttime, endtime = matching_hunt
+            _, _, huntname, theme, starttime, endtime = matching_hunt
             # print(starttime)
             return {
                 'ID': huntid,
-                'Puzzle count': puzzlecount,
                 'Name': huntname,
                 'Theme': theme,
-                'Past': past,
                 'Start time': starttime,
                 'End time': endtime
             }
@@ -165,7 +163,7 @@ class PuzzleHunt(commands.Cog):
     def _populate_text_strings(self):
         for key_key, key_value in TextStringKey.__dict__.items():
             if not key_key.startswith('_'):
-                self.TEXT_STRINGS[key_value] = "UNDEFINED"
+                self.TEXT_STRINGS[key_value] = key_value + ": UNDEFINED"
 
         # Default Strings For All Hunts
         text_cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_text_strings WHERE huntid = 'system'")
@@ -249,6 +247,7 @@ class PuzzleHunt(commands.Cog):
         channelname = self.sanitize_name(teamname)
         await self._send_as_embed(ctx, "Creating a new team...")
         channel = await ctx.guild.create_text_channel(channelname, category=discord.utils.get(ctx.guild.categories, name=HUNT_CATEGORY))
+        await channel.edit(topic=teamname)
         vc = await ctx.guild.create_voice_channel(channelname, category=discord.utils.get(ctx.guild.categories, name=HUNT_CATEGORY))
         await channel.set_permissions(
             ctx.guild.default_role,
