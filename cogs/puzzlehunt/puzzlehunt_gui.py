@@ -78,7 +78,7 @@ class PuzzlehuntGUI(object):
                         auto_size_columns=False,
                         justification='left',
                         enable_events=True,
-                        num_rows=6, key='-HUNTIDTABLE-'),
+                        num_rows=40, key='-HUNTIDTABLE-'),
                 ],
                 [
                     sg.Column(
@@ -242,7 +242,7 @@ class PuzzlehuntGUI(object):
         self.window['-MAINFRAME-'].expand(True, True)
         self.window['-TABGROUP-'].expand(True, True)
         self.window['-INNER_MAINFRAME-'].expand(True, True)
-        HUNT_MENU_FRAME.expand(expand_x=1, expand_y=True)
+        # HUNT_MENU_FRAME.expand(expand_x=1, expand_y=True)
         DATA_FRAME.expand(10, True)
         self.window['-PUZZLES_TABLE-'].expand(True, True)
         self.window['-TEAMS_TABLE-'].expand(True, True)
