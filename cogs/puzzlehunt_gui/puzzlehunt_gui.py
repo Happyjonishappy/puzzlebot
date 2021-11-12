@@ -704,6 +704,15 @@ class PuzzlehuntGUI(object):
             try:
                 cursor = self.sql_db.cursor()
                 cursor.execute("DELETE FROM puzzledb.puzzlehunts WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_puzzles WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_teams WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_solvers WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_attempts WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_text_strings WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_puzzle_partials WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_faq WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_errata WHERE huntid = %s", (hunt,))
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_team_applications WHERE huntid = %s", (hunt,))
                 sg.popup("Successful!")
                 self._huntid = None
                 self.fill_huntinfo_input("","","","","")
@@ -807,7 +816,7 @@ class PuzzlehuntGUI(object):
 
         new_partial_trigger = sg.popup_get_text("Enter intermediate trigger phrase:")
         
-        if new_partial_trigger != "Cancel":
+        if new_partial_trigger == "Cancel":
             return
         if new_partial_trigger in [None, ""]:
             sg.popup_error("A phrase is required!")

@@ -147,6 +147,8 @@ class PuzzleHunt(commands.Cog):
                 'End time': endtime
             }
         else:
+            self._huntid = None
+            await self._admin_send_as_embed("Hunt might have been deleted. Check with Hunt Admin.")
             return None
 
     def _populate_text_strings(self):
@@ -694,6 +696,8 @@ class PuzzleHunt(commands.Cog):
 
         async with ctx.typing():
             hunt_info = self._get_hunt_info()
+            if hunt_info is None:
+                return
         
         admin_role = discord.utils.get(ctx.guild.roles, name=HUNT_ADMIN_ROLE)
 
