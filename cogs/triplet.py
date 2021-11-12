@@ -21,7 +21,7 @@ class Triplet(commands.Cog):
     Cog for triplet puzzles.
     You're given a number, usually three, of words that are related to a different word.
     You have to find the fourth word based on the words that are given.
-    e.g. DRAWF, SNOW, HOUSE
+    e.g. DWARF, SNOW, HOUSE
     Answer: WHITE
 
     Word bank found from "https://www.wordexample.com/list/most-common-nouns-english"

@@ -992,3 +992,5 @@ command
 abuse
 limit
 championship
+joke
+cluster

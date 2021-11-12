@@ -84,17 +84,6 @@ class PuzzleHunt(commands.Cog):
             ORDER BY total_points DESC, last_solvetime ASC;
         """
 
-    TEAMS_VIEW_SQL = """SELECT id AS teamid, teamname AS teamname FROM puzzledb.puzzlehunt_teams teams
-            LEFT JOIN puzzledb.puzzlehunt_solves solves
-                ON solves.teamid = teams.id AND solves.huntid = teams.huntid
-                GROUP BY teams.id, solves.puzzleid) teamsolves
-        LEFT JOIN puzzledb.puzzlehunt_puzzles puzzles
-            ON teamsolves.puzzleid = puzzles.puzzleid AND teamsolves.huntid = puzzles.huntid
-            WHERE teamsolves.huntid = %s
-            GROUP BY teamsolves.teamid, teamsolves.teamname
-            ORDER BY total_points DESC, last_solvetime ASC;
-        """
-
     TEAM_INFO_SQL = """
         SELECT teamsolves.teamid AS teamid, teamsolves.teamname AS teamname, 
             MAX(teamsolves.last_solvetime) AS last_solvetime, COALESCE(SUM(puzzles.points), 0) AS total_points,
@@ -478,8 +467,9 @@ class PuzzleHunt(commands.Cog):
                 await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.FINISH_HUNT_OUTRO_HEADER], self.TEXT_STRINGS[TextStringKey.FINISH_HUNT_OUTRO_TEXT])
             self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_solves (huntid, puzzleid, solvetime, teamid) VALUES (%s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID']))
         elif attempt in partial_dict:
-            # Found a Cluephrase
+            # Found an Intermediate Answer / Cluephrase
             await self._send_as_embed(ctx, "Keep going!", partial_dict[attempt])
+            self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_bad_attempts (huntid, puzzleid, solvetime, teamid, attempt) VALUES (%s, %s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID'], attempt))
             return
         else:
             # Wrong
@@ -629,25 +619,30 @@ class PuzzleHunt(commands.Cog):
             await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.NO_HUNT_RUNNING])
             return
         
-        async with ctx.typing():  
-            cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_faqs WHERE huntid = %s;", (self._huntid,))
+        async with ctx.typing():
+            cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_faq WHERE huntid = %s;", (self._huntid,))
             faqs = cursor.fetchall()
+            cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_errata WHERE huntid = %s;", (self._huntid,))
+            errata = cursor.fetchall()
             
-        questions = []
-        errata = []
+        formatted_questions = []
+        formatted_errata = []
 
         for faq in faqs:
-            _, title, content, kind = faq
-            desc = '**' + title + '** ' + content
-            if kind == 'faq':
-                questions += desc,
+            _, _, question, answer = faq
+            formatted_questions += bold(question) + ' ' + answer,
+        for erratum in errata:
+            _, _, puzid, content = erratum
+            if puzid is None or puzid in ["", "global", "general", "system"]:
+                header = ""
             else:
-                errata += desc,
+                header = bold("(" + puz_id + ") ")
+            formatted_errata += header + content,
         
         embed = discord.Embed(colour=EMBED_COLOUR)
         
-        embed.add_field(name='FAQ', value='\n'.join(questions) if questions else 'No FAQ available.', inline=False)
-        embed.add_field(name='Errata', value='\n'.join(errata) if errata else 'No errata has been given.', inline=False)
+        embed.add_field(name='FAQ', value='\n'.join(formatted_questions) if formatted_questions else 'No FAQ available.', inline=False)
+        embed.add_field(name='Errata', value='\n'.join(formatted_errata) if formatted_errata else 'No errata has been given.', inline=False)
         await ctx.send(embed=embed)
 
 
