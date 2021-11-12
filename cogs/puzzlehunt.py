@@ -227,6 +227,12 @@ class PuzzleHunt(commands.Cog):
                 read_messages=True,
                 send_messages=True,
                 read_message_history=True)
+        if team_voice_channel:
+            await team_voice_channel.set_permissions(
+                member,
+                view_channel=True,
+                connect=True,
+                speak=True)
         
         await self._send_as_embed(ctx, "Successfully added member @{} to team `{}`.".format(member.display_name, team_info['Team Name']), "You can now access the team channel at #{}.".format(team_channel))
         await team_channel.send("Welcome to team `{}`, <@{}>!".format(team_info['Team Name'], memberid))
@@ -567,6 +573,11 @@ class PuzzleHunt(commands.Cog):
             
             self.bot.db_execute("DELETE FROM puzzledb.puzzlehunt_solvers WHERE huntid = %s AND teamid = %s AND id = %s", (self._huntid, teamid, ctx.author.id))
         
+            if len(members) == 1:
+                await self._send_as_embed(ctx, "You are the last member. The team will be deleted.")
+            else:
+                await ctx.send("Leaving...")
+
         channel = ctx.guild.get_channel(team_info['Channel ID'])
         await channel.set_permissions(
             target=ctx.author, view_channel=False, read_messages=False, send_messages=False, read_message_history=False)
@@ -575,7 +586,6 @@ class PuzzleHunt(commands.Cog):
             target=ctx.author, view_channel=False, connect=False, speak=False)
 
         if len(members) == 1:
-            await self._send_as_embed(ctx, "You are the last member. The team will be deleted.")
             await channel.delete()
             await voice_channel.delete()
             self.bot.db_execute("DELETE FROM puzzledb.puzzlehunt_teams WHERE huntid = %s AND id = %s", (self._huntid, teamid))
@@ -636,7 +646,7 @@ class PuzzleHunt(commands.Cog):
             if puzid is None or puzid in ["", "global", "general", "system"]:
                 header = ""
             else:
-                header = bold("(" + puz_id + ") ")
+                header = bold("(" + puzid + ") ")
             formatted_errata += header + content,
         
         embed = discord.Embed(colour=EMBED_COLOUR)
@@ -781,6 +791,8 @@ class PuzzleHunt(commands.Cog):
 
         hint_channel = discord.utils.get(ctx.guild.channels, name=HINT_CHANNEL)
         await self._admin_send_as_embed(hint_channel, f"Hint request from team `{team_info['Team Name']}`", hint_request_txt + f"\n\n[Jump To Message]({ctx.message.jump_url})")
+
+        await self._send_as_embed(ctx, "Your hint request has been delivered. Someone will get to you shortly.", f"Request: {hint_request_txt}")
         
 
     """

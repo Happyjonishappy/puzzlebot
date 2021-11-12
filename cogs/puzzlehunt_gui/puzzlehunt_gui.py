@@ -945,7 +945,7 @@ class PuzzlehuntGUI(object):
         self.db_get_errata()
         self.populate_errata()
 
-    def _update_erratum(self):
+    def _update_erratum(self, values):
         if self._selected["Erratum"] is None:
             sg.popup_error("No Erratum selected!")
             return
@@ -983,9 +983,9 @@ class PuzzlehuntGUI(object):
             (new_text, info_domain, info_key))
             self.db_get_infostrings()
             self.populate_infostrings()
-            sg.popup(f"Successfully updated ERR {info_id}!")
+            sg.popup(f"Successfully updated info string {info_key}!")
         except Exception as e:
-            sg.popup("Failed to update ERR. Error:", e)
+            sg.popup("Failed to update info string. Error:", e)
 
     def refresh_hunt_table(self):
         self.db_get_hunts()
@@ -1129,7 +1129,7 @@ class PuzzlehuntGUI(object):
         
         self._selected["Erratum"] = selected
         
-        line_data = self._data["Erratum"][selected]
+        line_data = self._data["Errata"][selected]
         errid, puzid, content = line_data
         self.fill_errata_input(errid, puzid, content)
 
