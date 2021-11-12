@@ -86,7 +86,7 @@ CREATE TABLE puzzledb.puzzlehunt_attempts (
     teamid INTEGER,
     solvetime TIMESTAMP,
     puzzleid VARCHAR(6),
-    attempt VARCHAR(50)
+    attempt VARCHAR(200)
 );
 
 CREATE TABLE puzzledb.puzzlehunt_faq (

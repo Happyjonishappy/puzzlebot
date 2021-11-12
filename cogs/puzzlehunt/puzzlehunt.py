@@ -427,7 +427,7 @@ class PuzzleHunt(commands.Cog):
             return
 
         async with ctx.typing(): 
-            cursor = self.bot.db_execute("SELECT solvetime FROM puzzledb.puzzlehunt_bad_attempts WHERE huntid = %s and teamid = %s and puzzleid = %s;", (self._huntid, team_info['Team ID'], puzid))
+            cursor = self.bot.db_execute("SELECT solvetime FROM puzzledb.puzzlehunt_attempts WHERE huntid = %s and teamid = %s and puzzleid = %s;", (self._huntid, team_info['Team ID'], puzid))
             solvetimes = cursor.fetchall()
         if solvetimes:
             solvetimes = [solvetime[0] for solvetime in solvetimes]
@@ -469,13 +469,13 @@ class PuzzleHunt(commands.Cog):
         elif attempt in partial_dict:
             # Found an Intermediate Answer / Cluephrase
             await self._send_as_embed(ctx, "Keep going!", partial_dict[attempt])
-            self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_bad_attempts (huntid, puzzleid, solvetime, teamid, attempt) VALUES (%s, %s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID'], attempt))
+            self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_attempts (huntid, puzzleid, solvetime, teamid, attempt) VALUES (%s, %s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID'], attempt))
             return
         else:
             # Wrong
             await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.WRONG_ANSWER])
-            if len(attempt) <= 50:
-                self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_bad_attempts (huntid, puzzleid, solvetime, teamid, attempt) VALUES (%s, %s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID'], attempt))
+            if len(attempt) <= 200:
+                self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_attempts (huntid, puzzleid, solvetime, teamid, attempt) VALUES (%s, %s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID'], attempt))
 
     @hunt.command(name='join')
     async def join(self, ctx, *, teamname=""):

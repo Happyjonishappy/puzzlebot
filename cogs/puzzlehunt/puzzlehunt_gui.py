@@ -55,6 +55,8 @@ class PuzzlehuntGUI(object):
         '-INFOSTRINGS_TABLE-'
     ]
 
+    DEFAULT_HUNT_INFOSTRINGS = ['Start Hunt Intro Header', 'Start Hunt Intro Text', 'Finish Hunt Outro Header', 'Finish Hunt Outro Text']
+
     def __init__(self):
         self.selected_tab = None
         self._selected = {
@@ -319,15 +321,29 @@ class PuzzlehuntGUI(object):
 
         tab5_layout = [
             [sg.Table(
-                values=[['--'] * 3], headings=["Domain", "Key", "Text"],
+                values=[['--'] * 3], headings=["Hunt Specific?", "Key", "Text"],
                 max_col_width=120,
-                col_widths=[100, 500, 8000],
+                col_widths=[100, 500, 800],
                 auto_size_columns=True,
                 justification='left',
                 enable_events=True,
                 num_rows=12, key='-INFOSTRINGS_TABLE-')],
-            [sg.Input(key='-INFOSTRINGS_INPUT-')],
-            [sg.Button("Refresh")]
+            [
+                sg.Column(
+                [[
+                    sg.Column([
+                        [sg.Text("Domain:")],
+                        [sg.Text("Key:")],
+                        [sg.Text("Text:")],
+                    ]),
+                    sg.Column([
+                        [sg.Input(key="-INFO_DOMAIN_INP-", disabled=True)],
+                        [sg.Input(key="-INFO_KEY_INP-", disabled=True)],
+                        [sg.Input(key="-INFO_TEXT_INP-")],
+                    ])
+                ]]),
+                sg.Button("Update", key="-UPDATE_INFOSTRING-")
+            ]
         ]
 
         OPTIONS_FRAME = sg.Frame(
@@ -401,7 +417,7 @@ class PuzzlehuntGUI(object):
         
 
         self.window.bind("<Escape>", "-ESCAPE-")
-        self.window.bind("<q>", "-ESCAPE-")
+        # self.window.bind("<q>", "-ESCAPE-")
         self.window.set_min_size((800, 600))
 
     def _setup_database(self):
@@ -430,7 +446,8 @@ class PuzzlehuntGUI(object):
             event, values = self.window.read()
 
             if event in [sg.WIN_CLOSED, "-ESCAPE-"]:
-                break
+                if sg.popup_yes_no("Are you sure you want to exit?") == 'Yes':
+                    break
 
             elif event == "-DARKTHEMETOGGLE-":
                 answer = sg.popup_yes_no("This will restart the GUI. Continue?")
@@ -479,6 +496,9 @@ class PuzzlehuntGUI(object):
             elif event == "-UPDATE_ERR-":
                 self._update_erratum(values)
 
+            elif event == "-UPDATE_INFOSTRING-":
+                self._update_info_string(values)
+
             elif event == "-UPDATE_TEAM-":
                 self._update_team(values)
 
@@ -522,6 +542,7 @@ class PuzzlehuntGUI(object):
             self.db_get_errata()
             self.populate_errata()
         elif self.selected_tab == "-INFOSTRINGS_TAB-":
+            self.fill_infostring_input("", "", "")
             self.db_get_infostrings()
             self.populate_infostrings()
         else:
@@ -564,6 +585,8 @@ class PuzzlehuntGUI(object):
         try:
             cursor = self.sql_db.cursor()
             cursor.execute("INSERT INTO puzzledb.puzzlehunts (huntid,huntname,theme,starttime,endtime) VALUES (%s,'Undefined','Undefined','01-01-1970 00:00:01.000000','01-01-1970 00:00:01.000000');", (newhuntid,))
+            for key in self.DEFAULT_HUNT_INFOSTRINGS:
+                cursor.execute("""INSERT INTO puzzledb.puzzlehunt_text_strings (huntid,textkey,textstring) VALUES (%s,%s,'Undefined');""", (newhuntid, key))
             sg.popup("Successful!")
         except Exception as e:
             sg.popup_error("Failed to add hunt! Error:", e)
@@ -702,7 +725,7 @@ class PuzzlehuntGUI(object):
     def _add_faq(self):
         faq_id = sg.popup_get_text("Type ID:")
         if faq_id in [faq[0] for faq in self._data["FAQ"]]:
-            sg.popup_annoying("FAQ ID already exists. Select and update instead.")
+            sg.popup_error("FAQ ID already exists. Select and update instead.")
             return
         
         try:
@@ -812,9 +835,29 @@ class PuzzlehuntGUI(object):
             (new_erratumid, new_puzzleid, new_content, self._huntid, erratum_id))
             self.db_get_errata()
             self.populate_errata()
-            sg.popup(f"Successfully updated ERR {erratum_id}!")
+            sg.popup(f"Successfully updated erratum {erratum_id}!")
         except Exception as e:
-            sg.popup("Failed to update ERR. Error:", e)  
+            sg.popup("Failed to update erratum. Error:", e)
+
+    def _update_info_string(self, values):
+        if self._selected["Info String"] is None:
+            sg.popup_error("No Info String selected!")
+            return
+
+        info_data = self._data["Info Strings"][self._selected["Info String"]]
+        info_domain, info_key, _ = info_data # huntid
+
+        new_text = values["-INFO_TEXT_INP-"]
+
+        cursor = self.sql_db.cursor()
+        try:
+            cursor.execute("UPDATE puzzledb.puzzlehunt_text_strings SET textstring=%s WHERE huntid=%s AND textkey=%s", 
+            (new_text, info_domain, info_key))
+            self.db_get_infostrings()
+            self.populate_infostrings()
+            sg.popup(f"Successfully updated ERR {info_id}!")
+        except Exception as e:
+            sg.popup("Failed to update ERR. Error:", e)
 
     def refresh_hunt_table(self):
         self.db_get_hunts()
@@ -919,7 +962,7 @@ class PuzzlehuntGUI(object):
         cursor.execute("SELECT puzzleid, solvetime FROM puzzledb.puzzlehunt_solves WHERE teamid = %s", (teamid,))
         solves = cursor.fetchall()
 
-        cursor.execute("SELECT puzzleid, attempt, solvetime FROM puzzledb.puzzlehunt_bad_attempts WHERE teamid = %s", (teamid,))
+        cursor.execute("SELECT puzzleid, attempt, solvetime FROM puzzledb.puzzlehunt_attempts WHERE teamid = %s", (teamid,))
         attempts = cursor.fetchall()
 
         self.window["-TEAM_MEMBERS_TABLE-"].update(values=members)
@@ -962,7 +1005,8 @@ class PuzzlehuntGUI(object):
         
         self._selected["Info String"] = selected
         
-        domain, string_key, string_value = self._data["Info Strings"][selected]
+        domain, key, text = self._data["Info Strings"][selected]
+        self.fill_infostring_input(domain, key, text)
 
 
     def fill_huntinfo_input(self, huntid, name, theme, start_t, end_t):
@@ -995,6 +1039,11 @@ class PuzzlehuntGUI(object):
         self.window["-ERR_ID_INP-"].update(value=errid)
         self.window["-ERR_PUZ_INP-"].update(value=puzid)
         self.window["-ERR_TEXT_INP-"].update(value=content)
+
+    def fill_infostring_input(self, domain, key, text):
+        self.window["-INFO_DOMAIN_INP-"].update(value=domain)
+        self.window["-INFO_KEY_INP-"].update(value=key)
+        self.window["-INFO_TEXT_INP-"].update(value=text)
 
 
 if __name__ == '__main__':
