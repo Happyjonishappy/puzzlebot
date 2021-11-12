@@ -49,6 +49,7 @@ class PuzzlehuntGUI(object):
 
     TABLES = [
         '-PUZZLES_TABLE-',
+        '-PARTIALS_TABLE-',
         '-TEAMS_TABLE-',
         '-FAQ_TABLE-',
         '-ERRATA_TABLE-',
@@ -61,6 +62,7 @@ class PuzzlehuntGUI(object):
         self.selected_tab = None
         self._selected = {
             "Puzzle": None,
+            "Partial": None,
             "Team": None,
             "FAQ": None,
             "Erratum": None,
@@ -126,37 +128,76 @@ class PuzzlehuntGUI(object):
                 enable_events=True,
                 num_rows=12, key='-PUZZLES_TABLE-')
             ],
-            [
+            [sg.Column([[
                 sg.Column(
-                [[
-                    sg.Button("Add", key="-ADDPUZ_BTN-"), 
-                    sg.Button("Delete", key="-DELPUZ_BTN-")
-                ]]),
-            ],
-            [
+                    [
+                        [
+                            sg.Button("Add", key="-ADDPUZ_BTN-"), 
+                            sg.Button("Delete", key="-DELPUZ_BTN-"),
+                        ],
+                        [
+                            sg.Column(
+                                [[
+                                    sg.Column([
+                                        [sg.Text("ID:")],
+                                        [sg.Text("Name:")],
+                                        [sg.Text("Description:")],
+                                        [sg.Text("Link:")],
+                                        [sg.Text("Points:")],
+                                        [sg.Text("Required Points:")],
+                                        [sg.Text("ANSWER:")],
+                                    ]),
+                                    sg.Column([
+                                        [sg.Input(key="-PUZZLE_ID_INP-")],
+                                        [sg.Input(key="-PUZZLE_NAME_INP-")],
+                                        [sg.Input(key="-PUZZLE_DESC_INP-")],
+                                        [sg.Input(key="-PUZZLE_LINK_INP-")],
+                                        [sg.Input(key="-PUZZLE_POINTS_INP-")],
+                                        [sg.Input(key="-PUZZLE_REQPOINTS_INP-")],
+                                        [sg.Input(key="-PUZZLE_ANSWER_INP-", text_color="grey")]
+                                    ])
+                                ]]
+                            )
+                        ],
+                        [
+                            sg.Button("Update", key="-UPDATE_PUZ-")
+                        ]
+                    ],
+                ),
                 sg.Column(
-                [[
-                    sg.Column([
-                        [sg.Text("ID:")],
-                        [sg.Text("Name:")],
-                        [sg.Text("Description:")],
-                        [sg.Text("Link:")],
-                        [sg.Text("Points:")],
-                        [sg.Text("Required Points:")],
-                        [sg.Text("ANSWER:")],
-                    ]),
-                    sg.Column([
-                        [sg.Input(key="-PUZZLE_ID_INP-")],
-                        [sg.Input(key="-PUZZLE_NAME_INP-")],
-                        [sg.Input(key="-PUZZLE_DESC_INP-")],
-                        [sg.Input(key="-PUZZLE_LINK_INP-")],
-                        [sg.Input(key="-PUZZLE_POINTS_INP-")],
-                        [sg.Input(key="-PUZZLE_REQPOINTS_INP-")],
-                        [sg.Input(key="-PUZZLE_ANSWER_INP-", text_color="grey")]
-                    ])
-                ]]),
-                sg.Button("Update", key="-UPDATE_PUZ-")
-            ]
+                    [
+                        [sg.Text("Intermediate / Partial Answers (Cluephrases)")],
+                        [sg.Table(
+                            values=[['--'] * 3], headings=["Puzzle", "Trigger", "Response"],
+                            max_col_width=120,
+                            col_widths=[20] * 3,
+                            auto_size_columns=True,
+                            justification='left',
+                            enable_events=True,
+                            num_rows=6, key='-PARTIALS_TABLE-')
+                        ],
+                        [
+                            sg.Button("Add", key="-ADDPARTIAL_BTN-"), 
+                            sg.Button("Delete", key="-DELPARTIAL_BTN-"),
+                        ],
+                        [
+                            sg.Column(
+                            [[
+                                sg.Column([
+                                    [sg.Text("Puzzle ID:")],
+                                    [sg.Text("Trigger:")],
+                                    [sg.Text("Response:")],
+                                ]),
+                                sg.Column([
+                                    [sg.Input(key="-PARTIAL_PUZZLE_INP-", disabled=True)],
+                                    [sg.Input(key="-PARTIAL_TRIGGER_INP-")],
+                                    [sg.Input(key="-PARTIAL_RESPONSE_INP-")],
+                                ])
+                            ]]),
+                            sg.Button("Update", key="-UPDATE_PARTIAL-")
+                        ]
+                ])
+            ]])]
         ]
 
         tab3_layout = [
@@ -399,6 +440,7 @@ class PuzzlehuntGUI(object):
         # HUNT_MENU_FRAME.expand(expand_x=1, expand_y=True)
         DATA_FRAME.expand(10, True)
         self.window['-PUZZLES_TABLE-'].expand(True, True)
+        self.window['-PARTIALS_TABLE-'].expand(True, True)
         self.window['-TEAMS_TABLE-'].expand(True, True)
         self.window['-FAQ_TABLE-'].expand(True, True)
         self.window['-ERRATA_TABLE-'].expand(True, True)
@@ -413,8 +455,6 @@ class PuzzlehuntGUI(object):
         self.window['-TEAM_ATTEMPTS_TABLE-'].expand(True, True)
         self.window['-TEAMS_ROW1-'].expand(True, True)
         self.window['-TEAMS_ROW2-'].expand(True, True)
-
-        
 
         self.window.bind("<Escape>", "-ESCAPE-")
         # self.window.bind("<q>", "-ESCAPE-")
@@ -480,7 +520,14 @@ class PuzzlehuntGUI(object):
             elif event == "-DELPUZ_BTN-":
                 self._delete_puzzle()
             elif event == "-UPDATE_PUZ-":
-                self._update_puzzle(values)
+                self._update_puzzle(values)          
+            
+            elif event == "-ADDPARTIAL_BTN-":
+                self._add_partial()
+            elif event == "-DELPARTIAL_BTN-":
+                self._delete_partial()
+            elif event == "-UPDATE_PARTIAL-":
+                self._update_partial(values)
 
             elif event == "-ADDFAQ_BTN-":
                 self._add_faq()
@@ -505,6 +552,9 @@ class PuzzlehuntGUI(object):
             elif event in self.TABLES:
                 if event == "-PUZZLES_TABLE-":
                     self.populate_puzzles(selected=values[event][0])
+                elif event == "-PARTIALS_TABLE-":
+                    self._selected["Partial"] = values[event][0]
+                    self.populate_puzzles(selected=self._selected["Puzzle"], selected_partial=self._selected["Partial"])
                 elif event == "-TEAMS_TABLE-":
                     self.populate_teams(selected=values[event][0])
                 elif event == "-FAQ_TABLE-":
@@ -529,6 +579,7 @@ class PuzzlehuntGUI(object):
             self.populate_huntinfo()
         elif self.selected_tab == "-PUZZLES_TAB-":
             self.fill_puzzle_input("","","","","","","")
+            self.fill_partial_input("","","")
             self.db_get_puzzles()
             self.populate_puzzles()
         elif self.selected_tab == "-TEAMS_TAB-":
@@ -655,7 +706,7 @@ class PuzzlehuntGUI(object):
 
     def _delete_puzzle(self):
         puz_idx = self._selected["Puzzle"]
-        if not puz_idx:
+        if puz_idx is None:
             sg.popup_error("No Puzzle selected!")
             return
 
@@ -688,7 +739,6 @@ class PuzzlehuntGUI(object):
         new_points = values["-PUZZLE_POINTS_INP-"]
         new_req = values["-PUZZLE_REQPOINTS_INP-"]
         new_answer = values["-PUZZLE_ANSWER_INP-"]
-
         
         cursor = self.sql_db.cursor()
         try:
@@ -700,6 +750,84 @@ class PuzzlehuntGUI(object):
         except Exception as e:
             sg.popup("Failed to update puzzle. Error:", e)
     
+    def _add_partial(self):
+        if self._selected["Puzzle"] is None:
+            sg.popup_error("No Puzzle selected!")
+            return
+
+        new_partial_trigger = sg.popup_get_text("Enter intermediate trigger phrase:")
+        new_partial_trigger = new_partial_trigger.lower().replace(" ", "")
+        
+        if new_partial_trigger == "" or new_partial_trigger is None:
+            sg.popup_error("A phrase is required!")
+            return
+        
+        try:
+            cursor = self.sql_db.cursor()
+            cursor.execute("""INSERT INTO puzzledb.puzzlehunt_puzzle_partials 
+                    (huntid,puzzleid,partialanswer,response) 
+                    VALUES (%s,%s,%s,'You''re on the right track!');""",
+                (self._huntid, self._data["Puzzles"][self._selected["Puzzle"]][0], new_partial_trigger))
+            sg.popup("Successful!")
+        except Exception as e:
+            sg.popup_error("Failed to add partial answer! Error:", e)
+        self.db_get_puzzles()
+        self.populate_puzzles(selected=self._selected["Puzzle"])
+
+    def _delete_partial(self):
+        print(self._selected)
+        puz_idx = self._selected["Puzzle"]
+        if puz_idx is None:
+            sg.popup_error("No Puzzle selected!")
+            return
+
+        partial_idx = self._selected["Partial"]
+        if partial_idx is None:
+            sg.popup_error("No Partial answer selected!")
+            return
+
+        puzzle_data = self._data["Puzzles"][puz_idx]
+        puzzleid = puzzle_data[0]
+
+        cursor = self.sql_db.cursor()
+        cursor.execute("SELECT puzzleid, partialanswer, response FROM puzzledb.puzzlehunt_puzzle_partials WHERE puzzleid = %s", (puzzleid,))
+        puzzle_partials = cursor.fetchall()
+
+        if partial_idx >= len(puzzle_partials):
+            return
+
+        _, trigger, response = puzzle_partials[partial_idx]
+
+        ans = sg.popup_yes_no(f"Are you sure you want to delete this partial answer: '{trigger}'' from puzzle: '{puzzleid}'?")
+        if ans == 'Yes':
+            try:
+                cursor = self.sql_db.cursor()
+                cursor.execute("DELETE FROM puzzledb.puzzlehunt_puzzle_partials WHERE puzzleid = %s AND partialanswer = %s", (puzzleid, trigger))
+                sg.popup("Successful!")
+            except Exception as e:
+                sg.popup_error("Failed to delete partial answer! Error:", e)
+        self.db_get_puzzles()
+        self.populate_puzzles()
+        
+    def _update_partial(self, values):
+        if self._selected["Puzzle"] is None:
+            popup_error("No puzzle selected!")
+            return
+        puzzleid = self._data["Puzzles"][self._selected["Puzzle"]][0]
+
+        new_trigger = values['-PARTIAL_TRIGGER_INP-']
+        new_response = values['-PARTIAL_RESPONSE_INP-']
+
+        cursor = self.sql_db.cursor()
+        try:
+            cursor.execute("UPDATE puzzledb.puzzlehunt_puzzle_partials SET partialanswer=%s, response=%s WHERE huntid=%s AND puzzleid=%s", 
+            (new_trigger, new_response, self._huntid, puzzleid))
+            self.db_get_puzzles()
+            self.populate_puzzles(selected=self._selected["Puzzle"], selected_partial=self._selected["Partial"])
+            sg.popup(f"Successfully updated partial answer {new_trigger} for puzzle {puzzleid}!")
+        except Exception as e:
+            sg.popup("Failed to partial answer. Error:", e)
+
     def _update_team(self, values):
         if self._selected["Team"] is None:
             sg.popup_error("No team selected!")
@@ -742,7 +870,7 @@ class PuzzlehuntGUI(object):
 
     def _delete_faq(self):
         faq_idx = self._selected["FAQ"]
-        if not faq_idx:
+        if faq_idx is None:
             sg.popup_error("No FAQ selected!")
             return
 
@@ -799,7 +927,7 @@ class PuzzlehuntGUI(object):
 
     def _delete_erratum(self):
         erratum_idx = self._selected["Erratum"]
-        if not erratum_idx:
+        if erratum_idx is None:
             sg.popup_error("No Erratum selected!")
             return
 
@@ -925,8 +1053,10 @@ class PuzzlehuntGUI(object):
         self.window["-HUNTINFO_STARTTIME_INP-"].update(value=start_t or "")
         self.window["-HUNTINFO_ENDTIME_INP-"].update(value=end_t or "")
 
-    def populate_puzzles(self, selected=0):
+    def populate_puzzles(self, selected=0, selected_partial=0):
         self.window["-PUZZLES_TABLE-"].update(values=self._data["Puzzles"])
+        self.window["-PARTIALS_TABLE-"].update([])
+        self.fill_partial_input("","","")
 
         if selected >= len(self._data["Puzzles"]):
             return
@@ -937,11 +1067,17 @@ class PuzzlehuntGUI(object):
 
         self.fill_puzzle_input(puzzleid, name, desc, link, points, req, answer)
 
-        # cursor = self.sql_db.cursor()
-        # cursor.execute("SELECT * FROM puzzledb.puzzlehunt_puzzle_partials WHERE puzzleid = %s", (puzzleid,))
-        # puzzle_partials = cursor.fetchall()
-        # if puzzle_partials:
-        #     pass
+        cursor = self.sql_db.cursor()
+        cursor.execute("SELECT puzzleid, partialanswer, response FROM puzzledb.puzzlehunt_puzzle_partials WHERE puzzleid = %s", (puzzleid,))
+        puzzle_partials = cursor.fetchall()
+        if puzzle_partials:
+            self.window["-PARTIALS_TABLE-"].update(puzzle_partials)
+
+            if selected_partial is None or selected_partial >= len(puzzle_partials):
+                return
+            
+            puzid, trigger, response = puzzle_partials[selected_partial]
+            self.fill_partial_input(puzid, trigger, response)
 
     def populate_teams(self, selected=0):
         self.window["-TEAMS_TABLE-"].update(values=self._data["Teams"])
@@ -1044,6 +1180,11 @@ class PuzzlehuntGUI(object):
         self.window["-INFO_DOMAIN_INP-"].update(value=domain)
         self.window["-INFO_KEY_INP-"].update(value=key)
         self.window["-INFO_TEXT_INP-"].update(value=text)
+
+    def fill_partial_input(self, puzid, trigger, response):
+        self.window["-PARTIAL_PUZZLE_INP-"].update(value=puzid)
+        self.window["-PARTIAL_TRIGGER_INP-"].update(value=trigger)
+        self.window["-PARTIAL_RESPONSE_INP-"].update(value=response)
 
 
 if __name__ == '__main__':

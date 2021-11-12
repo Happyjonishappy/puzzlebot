@@ -11,7 +11,7 @@ import discord
 from discord.ext.commands import Bot, has_permissions, CommandNotFound, has_any_role, command, ExtensionAlreadyLoaded, ExtensionNotFound, ExtensionFailed, ExtensionNotLoaded
 
 from cogs.core import Core
-from cogs.puzzlehunt.puzzlehunt import PuzzleHunt
+from cogs.puzzlehunt import PuzzleHunt
 from cogs.database import Database
 from cogs.trivia import Trivia
 from cogs.triplet import Triplet
