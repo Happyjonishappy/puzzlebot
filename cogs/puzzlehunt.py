@@ -288,9 +288,9 @@ class PuzzleHunt(commands.Cog):
     async def hunt_status(self, ctx):
         embed = discord.Embed(colour=EMBED_COLOUR)
         if self._huntid is not None:
-            embed.set_author(name="Currently Running Puzzle Hunt:")
             hunt_info = self._get_hunt_info(self._huntid)
             if hunt_info is not None:
+                embed.set_author(name="Currently Running Puzzle Hunt:")
                 for var in ['Start time', 'End time']:
                     if not hunt_info[var]:
                         await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.MISSING_VARIABLE].format(variablename=var))
@@ -317,7 +317,9 @@ class PuzzleHunt(commands.Cog):
                     value=f"Not sure what to do? Start with `{self.bot.BOT_PREFIX}hunt help`!",
                     inline=False
                 )
-                
+            else:
+                embed.set_author(name=self.TEXT_STRINGS[TextStringKey.NO_HUNT_RUNNING])
+                self._huntid = None
         else:
             embed.set_author(name=self.TEXT_STRINGS[TextStringKey.NO_HUNT_RUNNING])
         await ctx.send(embed=embed)
