@@ -783,7 +783,7 @@ class PuzzlehuntGUI(object):
             sg.popup("Failed to update FAQ. Error:", e)  
     
     def _add_erratum(self):
-        puz_id = sg.popup_get_text("Type Puzzle ID to add FAQ for ('global' if not puzzle specific):")
+        puz_id = sg.popup_get_text("Type Puzzle ID to add erratum ('global' if not puzzle specific):")
         
         try:
             cursor = self.sql_db.cursor()

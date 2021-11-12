@@ -127,17 +127,17 @@ INSERT INTO puzzledb.puzzlehunt_text_strings (huntid, textkey, textstring) VALUE
     ('system', 'Already in a Team', 'You cannot perform this command because you are already in a team. If you wish to change team, use `hunt leave`.'),
     ('system', 'Waiting for Recruitee', 'You have recruited a new member to your team. To confirm, ask said member to perform `hunt join <your team name>`.'),
     ('system', 'Recruitee in Team', 'Your recruitee is already in a team. They need to perform `hunt leave` first to join your team.'),
-    ('system', 'Correct Answer', 'Your answer is... CORRECT! You have gained {} points!'),
+    ('system', 'Correct Answer', 'Your answer is... CORRECT! You have gained {puzzlepoints} points!'),
     ('system', 'Wrong Answer', 'Sorry, that is not the right answer.'),
     ('system', 'Wrong Channel', 'You cannot perform this action in the current channel. Please use your team channel.'),
     ('system', 'Already Solved', 'This puzzle has already been solved!'),
-    ('system', 'Attempting Too Soon', 'You are attempting this puzzle again too soon! Please wait another {} seconds.'),
+    ('system', 'Attempting Too Soon', 'You are attempting this puzzle again too soon! Please wait another {remainingtime} seconds.'),
     ('system', 'Hunt Not Started', 'You cannot perform this action since the hunt has not officially started.'),
-    ('system', 'Missing Variable', 'Database variable missing: "{}". Please contact admin.'),
+    ('system', 'Missing Variable', 'Database variable missing: "{variablename}". Please contact admin.'),
     ('system', 'No Hints Available', 'You don''t have any hint requests available!'),
-    ('system', 'Hint Instruction', 'Ask for hint: `hunt requesthint [details of your hint request]`. You currently have {} hints available.'),
+    ('system', 'Hint Instruction', 'Ask for hint: `hunt requesthint [details of your hint request]`. You currently have {numhints} hints available.'),
     ('system', 'Hint Too Short', 'Your hint request is too short. Please type at least 30 characters!'),
-    ('system', 'You Gave Hints', 'You gave {} hint(s) to `{}`!'),
+    ('system', 'You Gave Hints', 'You gave {numhints} hint(s) to `{teamname}`!'),
     ('system', 'Puzzle ID Not Available', 'The requested puzzle ID is not available!');
 -- END POPULATION --
 

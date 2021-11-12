@@ -287,7 +287,7 @@ class PuzzleHunt(commands.Cog):
             if hunt_info is not None:
                 for var in ['Start time', 'End time']:
                     if not hunt_info[var]:
-                        await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.MISSING_VARIABLE].format(var))
+                        await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.MISSING_VARIABLE].format(variablename=var))
                         return
                 remaining = (hunt_info['End time'] - datetime.now()).total_seconds()
                 to_go = (hunt_info['Start time'] - datetime.now()).total_seconds()
@@ -434,7 +434,7 @@ class PuzzleHunt(commands.Cog):
             last_solvetime = sorted(solvetimes)[-1]
             time_passed = int((datetime.now() - last_solvetime).total_seconds())
             if time_passed < DELAY_AFTER_FAILING:
-                await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.ATTEMPTING_TOO_SOON].format(DELAY_AFTER_FAILING - time_passed))
+                await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.ATTEMPTING_TOO_SOON].format(remainingtime=DELAY_AFTER_FAILING - time_passed))
                 return
             
         async with ctx.typing(): 
@@ -462,7 +462,7 @@ class PuzzleHunt(commands.Cog):
 
         if attempt == answer:
             # Correct solve
-            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.CORRECT_ANSWER].format(points))
+            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.CORRECT_ANSWER].format(puzzlepoints=points))
             if puzid == 'META':
                 await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.FINISH_HUNT_OUTRO_HEADER], self.TEXT_STRINGS[TextStringKey.FINISH_HUNT_OUTRO_TEXT])
             self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_solves (huntid, puzzleid, solvetime, teamid) VALUES (%s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID']))
@@ -686,7 +686,7 @@ class PuzzleHunt(commands.Cog):
         admin_role = discord.utils.get(ctx.guild.roles, name=HUNT_ADMIN_ROLE)
 
         if not hunt_info['Start time']:
-            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.MISSING_VARIABLE].format('Start time'))
+            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.MISSING_VARIABLE].format(variablename='Start time'))
 
         if hunt_info['Start time'] > datetime.now() and not self._VARIABLES['Solving outside hunt duration'] and not admin_role in ctx.author.roles:
             await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.HUNT_NOT_STARTED])
@@ -767,11 +767,11 @@ class PuzzleHunt(commands.Cog):
             return
 
         if hint_request_txt == '':
-            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.HINT_INSTRUCTION].format(hintcount))
+            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.HINT_INSTRUCTION].format(numhints=hintcount))
             return
         
         if len(hint_request_txt) < 30:
-            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.HINT_INSTRUCTION].format(hintcount))
+            await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.HINT_INSTRUCTION].format(numhints=hintcount))
             await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.HINT_TOO_SHORT])
             return
 
@@ -904,7 +904,7 @@ class PuzzleHunt(commands.Cog):
                 END) WHERE huntid = %s AND id = %s""", 
             (hint_increment, hint_increment, self._huntid, team_info['Team ID']))
         
-        await self._admin_send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.YOU_GAVE_HINTS].format(hint_increment, team_name))
+        await self._admin_send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.YOU_GAVE_HINTS].format(numhints=hint_increment, teamname=team_name))
 
 
     @hunt.command(name="grantglobalhint", aliases=["giveglobalhint", "givehintglobal"])
@@ -930,7 +930,7 @@ class PuzzleHunt(commands.Cog):
                     ELSE hintcount + %s
                 END ) WHERE huntid = %s""", (hint_increment, hint_increment, self._huntid,))
         
-        await self._admin_send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.YOU_GAVE_HINTS].format(hint_increment, "EVERYONE"))
+        await self._admin_send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.YOU_GAVE_HINTS].format(numhints=hint_increment, teamname="EVERYONE"))
 
 
     @hunt.command(name="admin")
