@@ -56,6 +56,13 @@ class PuzzlehuntGUI(object):
         '-INFOSTRINGS_TABLE-'
     ]
 
+    OTHER_TABLES = [
+        '-TEAM_SOLVES_TABLE-',
+        '-TEAM_ATTEMPTS_TABLE-',
+        '-TEAM_MEMBERS_TABLE-',
+        '-INFOSTRINGS_TABLE-'
+    ]
+
     DEFAULT_HUNT_INFOSTRINGS = ['Start Hunt Intro Header', 'Start Hunt Intro Text', 'Finish Hunt Outro Header', 'Finish Hunt Outro Text']
 
     def __init__(self):
@@ -123,7 +130,8 @@ class PuzzlehuntGUI(object):
                 values=[['--'] * 7], headings=["ID", "Name", "Description", "Link", "Points", "Points to Unlock", "Answer"],
                 max_col_width=1200,
                 col_widths=[20] * 7,
-                auto_size_columns=True,
+                auto_size_columns=False,
+                alternating_row_color=self.get_alt_row_colour(),
                 justification='left',
                 enable_events=True,
                 num_rows=12, key='-PUZZLES_TABLE-')
@@ -172,6 +180,7 @@ class PuzzlehuntGUI(object):
                             max_col_width=120,
                             col_widths=[20] * 3,
                             auto_size_columns=True,
+                            alternating_row_color=self.get_alt_row_colour(),
                             justification='left',
                             enable_events=True,
                             num_rows=6, key='-PARTIALS_TABLE-')
@@ -211,6 +220,7 @@ class PuzzlehuntGUI(object):
                                 max_col_width=1200,
                                 col_widths=[20] * 5,
                                 auto_size_columns=True,
+                                alternating_row_color=self.get_alt_row_colour(),
                                 justification='left',
                                 enable_events=True,
                                 num_rows=12, key='-TEAMS_TABLE-'
@@ -226,6 +236,7 @@ class PuzzlehuntGUI(object):
                                 max_col_width=1200,
                                 col_widths=[20] * 1,
                                 auto_size_columns=True,
+                                alternating_row_color=self.get_alt_row_colour(),
                                 justification='left',
                                 enable_events=True,
                                 num_rows=12, key='-TEAM_MEMBERS_TABLE-'
@@ -261,6 +272,7 @@ class PuzzlehuntGUI(object):
                                 max_col_width=120,
                                 col_widths=[20] * 2,
                                 auto_size_columns=True,
+                                alternating_row_color=self.get_alt_row_colour(),
                                 justification='left',
                                 enable_events=True,
                                 num_rows=12, key='-TEAM_SOLVES_TABLE-'
@@ -276,6 +288,7 @@ class PuzzlehuntGUI(object):
                                 max_col_width=120,
                                 col_widths=[20] * 3,
                                 auto_size_columns=True,
+                                alternating_row_color=self.get_alt_row_colour(),
                                 justification='left',
                                 enable_events=True,
                                 num_rows=12, key='-TEAM_ATTEMPTS_TABLE-'
@@ -295,6 +308,7 @@ class PuzzlehuntGUI(object):
                         max_col_width=120,
                         col_widths=[20] * 3,
                         auto_size_columns=True,
+                        alternating_row_color=self.get_alt_row_colour(),
                         justification='left',
                         enable_events=True,
                         num_rows=12, key='-FAQ_TABLE-')
@@ -330,6 +344,7 @@ class PuzzlehuntGUI(object):
                         max_col_width=120,
                         col_widths=[20] * 3,
                         auto_size_columns=True,
+                        alternating_row_color=self.get_alt_row_colour(),
                         justification='left',
                         enable_events=True,
                         num_rows=12, key='-ERRATA_TABLE-')
@@ -366,6 +381,7 @@ class PuzzlehuntGUI(object):
                 max_col_width=120,
                 col_widths=[100, 500, 800],
                 auto_size_columns=True,
+                alternating_row_color=self.get_alt_row_colour(),
                 justification='left',
                 enable_events=True,
                 num_rows=12, key='-INFOSTRINGS_TABLE-')],
@@ -387,13 +403,6 @@ class PuzzlehuntGUI(object):
             ]
         ]
 
-        OPTIONS_FRAME = sg.Frame(
-            "",
-            [
-                [sg.Button("Toggle Dark Theme", key="-DARKTHEME-")]
-            ]
-        )
-
         DATA_FRAME = sg.Frame(
             "Hunt: ",
             [
@@ -412,6 +421,7 @@ class PuzzlehuntGUI(object):
 
         MAIN_FRAME_LAYOUT = [
             [ 
+                sg.Button("Save Layout", key="-SAVE_LAYOUT-"),
                 sg.Button("Toggle Light / Dark Theme...", key="-DARKTHEMETOGGLE-"),
                 sg.Text(f"Connected to {server_shorthand}")
             ],
@@ -457,8 +467,12 @@ class PuzzlehuntGUI(object):
         self.window['-TEAMS_ROW2-'].expand(True, True)
 
         self.window.bind("<Escape>", "-ESCAPE-")
-        # self.window.bind("<q>", "-ESCAPE-")
+        self.window.bind("<q>", "-ESCAPE-")
         self.window.set_min_size((800, 600))
+        self._load_layout()
+    
+    def get_alt_row_colour(self):
+        return "#1f1c19" if self.IS_DARK_THEME else "#ebf5fa"
 
     def _setup_database(self):
         self.sql_db = psycopg2.connect(POSTGRESQL_SERVER, sslmode="allow")
@@ -480,14 +494,39 @@ class PuzzlehuntGUI(object):
         self.window.close()
         self._make_window()
         self.refresh_hunt_table()
+    
+    def _load_layout(self):
+        if 'size' in config:
+            size = config["size"]
+            self.window.size = size
+
+        if 'tables' in config:
+            for table, widths in config['tables'].items():
+                table_widget = self.window[table].Widget
+                for i, width in enumerate(widths):
+                    table_widget.column(i, width=width)
+                table_widget.pack(side="left", fill="both", expand=True)
+
+    def _save_layout(self):
+        config['size'] = self.window.size
+
+        tables = {}
+        for table in self.TABLES + self.OTHER_TABLES:
+            tables[table] = [self.window[table].Widget.column(i)['width'] for i in range(len(self.window[table].ColumnHeadings))]
+        config['tables'] = tables
+        
+        dumpconfig(config)
 
     def run(self):
         while True:
             event, values = self.window.read()
 
-            if event in [sg.WIN_CLOSED, "-ESCAPE-"]:
+            if event == "-ESCAPE-":
+                self._save_layout()
                 if sg.popup_yes_no("Are you sure you want to exit?") == 'Yes':
                     break
+            elif event == sg.WIN_CLOSED:
+                break
 
             elif event == "-DARKTHEMETOGGLE-":
                 answer = sg.popup_yes_no("This will restart the GUI. Continue?")
@@ -548,21 +587,32 @@ class PuzzlehuntGUI(object):
 
             elif event == "-UPDATE_TEAM-":
                 self._update_team(values)
+            
+            elif event == "-SAVE_LAYOUT-":
+                self._save_layout()
 
             elif event in self.TABLES:
-                if event == "-PUZZLES_TABLE-":
-                    self.populate_puzzles(selected=values[event][0])
-                elif event == "-PARTIALS_TABLE-":
-                    self._selected["Partial"] = values[event][0]
-                    self.populate_puzzles(selected=self._selected["Puzzle"], selected_partial=self._selected["Partial"])
-                elif event == "-TEAMS_TABLE-":
-                    self.populate_teams(selected=values[event][0])
-                elif event == "-FAQ_TABLE-":
-                    self.populate_faq(selected=values[event][0])
-                elif event == "-ERRATA_TABLE-":
-                    self.populate_errata(selected=values[event][0])
-                elif event == "-INFOSTRINGS_TABLE-":
-                    self.populate_infostrings(selected=values[event][0])
+                if values[event]:
+                    # from IPython import embed; embed()
+                    if event == "-PUZZLES_TABLE-":
+                        if values[event][0] != self._selected["Puzzle"]:
+                            self.populate_puzzles(selected=values[event][0])
+                    elif event == "-PARTIALS_TABLE-":
+                        if values[event][0] != self._selected["Partial"]:
+                            self._selected["Partial"] = values[event][0]
+                            self.populate_puzzles(selected=self._selected["Puzzle"], selected_partial=self._selected["Partial"])
+                    elif event == "-TEAMS_TABLE-":
+                        if values[event][0] != self._selected["Team"]:
+                            self.populate_teams(selected=values[event][0])
+                    elif event == "-FAQ_TABLE-":
+                        if values[event][0] != self._selected["FAQ"]:
+                            self.populate_faq(selected=values[event][0])
+                    elif event == "-ERRATA_TABLE-":
+                        if values[event][0] != self._selected["Erratum"]:
+                            self.populate_errata(selected=values[event][0])
+                    elif event == "-INFOSTRINGS_TABLE-":
+                        if values[event][0] != self._selected["Info String"]:
+                            self.populate_infostrings(selected=values[event][0])
 
         self.window.close()
 
@@ -756,11 +806,14 @@ class PuzzlehuntGUI(object):
             return
 
         new_partial_trigger = sg.popup_get_text("Enter intermediate trigger phrase:")
-        new_partial_trigger = new_partial_trigger.lower().replace(" ", "")
         
-        if new_partial_trigger == "" or new_partial_trigger is None:
+        if new_partial_trigger != "Cancel":
+            return
+        if new_partial_trigger in [None, ""]:
             sg.popup_error("A phrase is required!")
             return
+        
+        new_partial_trigger = new_partial_trigger.lower().replace(" ", "")
         
         try:
             cursor = self.sql_db.cursor()
@@ -775,7 +828,6 @@ class PuzzlehuntGUI(object):
         self.populate_puzzles(selected=self._selected["Puzzle"])
 
     def _delete_partial(self):
-        print(self._selected)
         puz_idx = self._selected["Puzzle"]
         if puz_idx is None:
             sg.popup_error("No Puzzle selected!")
@@ -993,7 +1045,7 @@ class PuzzlehuntGUI(object):
 
     def db_get_hunts(self):
         cursor = self.sql_db.cursor()
-        cursor.execute("SELECT * FROM puzzledb.puzzlehunts;")
+        cursor.execute("SELECT * FROM puzzledb.puzzlehunts ORDER BY huntid;")
         hunts = cursor.fetchall()
         
         self._data["Hunts"] = []
@@ -1008,7 +1060,7 @@ class PuzzlehuntGUI(object):
 
     def db_get_puzzles(self):
         cursor = self.sql_db.cursor()
-        cursor.execute("SELECT puzzleid, name, description, relatedlink, points, requiredpoints, answer FROM puzzledb.puzzlehunt_puzzles WHERE huntid = %s;", (self._huntid,))
+        cursor.execute("SELECT puzzleid, name, description, relatedlink, points, requiredpoints, answer FROM puzzledb.puzzlehunt_puzzles WHERE huntid = %s ORDER BY puzzleid;", (self._huntid,))
         self._data["Puzzles"] = cursor.fetchall()
 
     def db_get_teams(self):
@@ -1025,22 +1077,23 @@ class PuzzlehuntGUI(object):
         LEFT JOIN puzzledb.puzzlehunt_puzzles puzzles
         ON teamsolves.puzzleid = puzzles.puzzleid AND teamsolves.huntid = puzzles.huntid
         WHERE teamsolves.huntid = %s
-        GROUP BY teamsolves.teamid, teamsolves.teamname, teamsolves.teamhintcount;""", (self._huntid,))
+        GROUP BY teamsolves.teamid, teamsolves.teamname, teamsolves.teamhintcount
+        ORDER BY teamsolves.teamname;""", (self._huntid,))
         self._data["Teams"] = cursor.fetchall()
 
     def db_get_faq(self):
         cursor = self.sql_db.cursor()
-        cursor.execute("SELECT id, question, content FROM puzzledb.puzzlehunt_faq WHERE huntid = %s;", (self._huntid,))
+        cursor.execute("SELECT id, question, content FROM puzzledb.puzzlehunt_faq WHERE huntid = %s ORDER BY question;", (self._huntid,))
         self._data["FAQ"] = cursor.fetchall()
 
     def db_get_errata(self):
         cursor = self.sql_db.cursor()
-        cursor.execute("SELECT id, puzzleid, content FROM puzzledb.puzzlehunt_errata WHERE huntid = %s;", (self._huntid,))
+        cursor.execute("SELECT id, puzzleid, content FROM puzzledb.puzzlehunt_errata WHERE huntid = %s ORDER BY puzzleid, content;", (self._huntid,))
         self._data["Errata"] = cursor.fetchall()
 
     def db_get_infostrings(self):
         cursor = self.sql_db.cursor()
-        cursor.execute("SELECT huntid, textkey, textstring FROM puzzledb.puzzlehunt_text_strings WHERE huntid IN ('system', %s);", (self._huntid,))
+        cursor.execute("SELECT huntid, textkey, textstring FROM puzzledb.puzzlehunt_text_strings WHERE huntid IN ('system', %s) ORDER BY huntid, textkey;", (self._huntid,))
         self._data["Info Strings"] = cursor.fetchall()
 
     def populate_huntinfo(self):
@@ -1054,36 +1107,41 @@ class PuzzlehuntGUI(object):
         self.window["-HUNTINFO_ENDTIME_INP-"].update(value=end_t or "")
 
     def populate_puzzles(self, selected=0, selected_partial=0):
-        self.window["-PUZZLES_TABLE-"].update(values=self._data["Puzzles"])
+        puzzle_data = self._data["Puzzles"]
         self.window["-PARTIALS_TABLE-"].update([])
         self.fill_partial_input("","","")
 
-        if selected >= len(self._data["Puzzles"]):
+        if selected >= len(puzzle_data):
+            self.window["-PUZZLES_TABLE-"].update(values=puzzle_data)
             return
+        
+        self.window["-PUZZLES_TABLE-"].update(values=puzzle_data, select_rows=[selected])
         
         self._selected["Puzzle"] = selected
 
-        puzzleid, name, desc, link, points, req, answer = self._data["Puzzles"][selected]
+        puzzleid, name, desc, link, points, req, answer = puzzle_data[selected]
 
         self.fill_puzzle_input(puzzleid, name, desc, link, points, req, answer)
 
         cursor = self.sql_db.cursor()
-        cursor.execute("SELECT puzzleid, partialanswer, response FROM puzzledb.puzzlehunt_puzzle_partials WHERE puzzleid = %s", (puzzleid,))
+        cursor.execute("SELECT puzzleid, partialanswer, response FROM puzzledb.puzzlehunt_puzzle_partials WHERE puzzleid = %s ORDER BY puzzleid, partialanswer", (puzzleid,))
         puzzle_partials = cursor.fetchall()
         if puzzle_partials:
-            self.window["-PARTIALS_TABLE-"].update(puzzle_partials)
-
             if selected_partial is None or selected_partial >= len(puzzle_partials):
+                self.window["-PARTIALS_TABLE-"].update(puzzle_partials)
                 return
-            
+
+            self.window["-PARTIALS_TABLE-"].update(puzzle_partials, select_rows=[selected_partial])
+
             puzid, trigger, response = puzzle_partials[selected_partial]
             self.fill_partial_input(puzid, trigger, response)
 
     def populate_teams(self, selected=0):
-        self.window["-TEAMS_TABLE-"].update(values=self._data["Teams"])
-
         if selected >= len(self._data["Teams"]):
+            self.window["-TEAMS_TABLE-"].update(values=self._data["Teams"])
             return
+        
+        self.window["-TEAMS_TABLE-"].update(values=self._data["Teams"], select_rows=[selected])
         
         self._selected["Team"] = selected
         
@@ -1095,10 +1153,10 @@ class PuzzlehuntGUI(object):
         cursor.execute("SELECT id FROM puzzledb.puzzlehunt_solvers WHERE teamid = %s", (teamid,))
         members = cursor.fetchall()
     
-        cursor.execute("SELECT puzzleid, solvetime FROM puzzledb.puzzlehunt_solves WHERE teamid = %s", (teamid,))
+        cursor.execute("SELECT puzzleid, solvetime FROM puzzledb.puzzlehunt_solves WHERE teamid = %s ORDER BY solvetime DESC", (teamid,))
         solves = cursor.fetchall()
 
-        cursor.execute("SELECT puzzleid, attempt, solvetime FROM puzzledb.puzzlehunt_attempts WHERE teamid = %s", (teamid,))
+        cursor.execute("SELECT puzzleid, attempt, solvetime FROM puzzledb.puzzlehunt_attempts WHERE teamid = %s ORDER BY solvetime DESC", (teamid,))
         attempts = cursor.fetchall()
 
         self.window["-TEAM_MEMBERS_TABLE-"].update(values=members)
@@ -1110,11 +1168,12 @@ class PuzzlehuntGUI(object):
         self.populate_errata()
 
     def populate_faq(self, selected=0):
-        self.window["-FAQ_TABLE-"].update(values=self._data["FAQ"])
-
         if selected >= len(self._data["FAQ"]):
+            self.window["-FAQ_TABLE-"].update(values=self._data["FAQ"])
             return
         
+        self.window["-FAQ_TABLE-"].update(values=self._data["FAQ"], select_rows=[selected])
+
         self._selected["FAQ"] = selected
         
         line_data = self._data["FAQ"][selected]
@@ -1122,11 +1181,12 @@ class PuzzlehuntGUI(object):
         self.fill_faq_input(faqid, question, answer)
 
     def populate_errata(self, selected=0):
-        self.window["-ERRATA_TABLE-"].update(values=self._data["Errata"])
-
         if selected >= len(self._data["Errata"]):
+            self.window["-ERRATA_TABLE-"].update(values=self._data["Errata"])
             return
         
+        self.window["-ERRATA_TABLE-"].update(values=self._data["Errata"], select_rows=[selected])
+
         self._selected["Erratum"] = selected
         
         line_data = self._data["Errata"][selected]
@@ -1134,10 +1194,11 @@ class PuzzlehuntGUI(object):
         self.fill_errata_input(errid, puzid, content)
 
     def populate_infostrings(self, selected=0):
-        self.window["-INFOSTRINGS_TABLE-"].update(values=self._data["Info Strings"])
-        
         if selected >= len(self._data["Info Strings"]):
+            self.window["-INFOSTRINGS_TABLE-"].update(values=self._data["Info Strings"])
             return
+
+        self.window["-INFOSTRINGS_TABLE-"].update(values=self._data["Info Strings"], select_rows=[selected])
         
         self._selected["Info String"] = selected
         
