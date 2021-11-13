@@ -472,9 +472,17 @@ class PuzzleHunt(commands.Cog):
         if attempt == answer:
             # Correct solve
             await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.CORRECT_ANSWER].format(puzzlepoints=points))
+            self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_solves (huntid, puzzleid, solvetime, teamid) VALUES (%s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID']))
             if puzid == 'META':
                 await self._send_as_embed(ctx, self.TEXT_STRINGS[TextStringKey.FINISH_HUNT_OUTRO_HEADER], self.TEXT_STRINGS[TextStringKey.FINISH_HUNT_OUTRO_TEXT])
             self.bot.db_execute("INSERT INTO puzzledb.puzzlehunt_solves (huntid, puzzleid, solvetime, teamid) VALUES (%s, %s, %s, %s);", (self._huntid, puzid, datetime.now(), team_info['Team ID']))
+
+            # Check if anything has been unlocked
+            cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_puzzles where huntid = %s and requiredpoints <= %s and requiredpoints > %s;", (self._huntid, team_info['Points'] + points, team_info['Points']))
+            unlocked_puzzles = cursor.fetchall()
+            if len(unlocked_puzzles) > 0:
+                await self._send_as_embed(ctx, "You have unlocked a new puzzle!", f"Type '{self.bot.BOT_PREFIX}hunt puzzles' to check.")
+
         elif attempt in partial_dict:
             # Found an Intermediate Answer / Cluephrase
             await self._send_as_embed(ctx, "Keep going!", partial_dict[attempt])
