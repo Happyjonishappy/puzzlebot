@@ -148,7 +148,6 @@ class PuzzleHunt(commands.Cog):
             }
         else:
             self._huntid = None
-            await self._admin_send_as_embed("Hunt might have been deleted. Check with Hunt Admin.")
             return None
 
     def _populate_text_strings(self):
