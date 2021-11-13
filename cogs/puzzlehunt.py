@@ -102,7 +102,7 @@ class PuzzleHunt(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self._huntid = 'avatar'
+        self._huntid = None
         self._VARIABLES = {
             "Hide locked puzzles": True,
             "Non-meta same link": False,
@@ -857,6 +857,7 @@ class PuzzleHunt(commands.Cog):
                 "To activate a hunt, include the correct `huntid` as parameter! To view hunt IDs, use `hunt settings`.")
             return
         self._huntid = huntid
+        self._populate_text_strings()
         await self._send_as_embed(ctx, "Hunt activated.")
     
     @hunt.command(name="deactivate")
