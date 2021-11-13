@@ -156,7 +156,11 @@ class PuzzleHunt(commands.Cog):
                 self.TEXT_STRINGS[key_value] = key_value + ": UNDEFINED"
 
         # Default Strings For All Hunts
-        text_cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_text_strings WHERE huntid = 'system'")
+        if self._huntid is None:
+            text_cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_text_strings WHERE huntid = 'system';")
+        else:
+            text_cursor = self.bot.db_execute("SELECT * FROM puzzledb.puzzlehunt_text_strings WHERE huntid in ('system', %s);", (self._huntid,))
+
         text_strings = text_cursor.fetchall()
         for text_string in text_strings:
             _, _, key, value = text_string
