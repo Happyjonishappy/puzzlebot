@@ -91,7 +91,7 @@ class PuzzlehuntGUI(object):
                         auto_size_columns=False,
                         justification='left',
                         enable_events=True,
-                        num_rows=40, key='-HUNTIDTABLE-'),
+                        num_rows=20, key='-HUNTIDTABLE-'),
                 ],
                 [
                     sg.Column(
@@ -430,7 +430,10 @@ class PuzzlehuntGUI(object):
                     self.MAIN_FRAME_TITLE,
                     [[
                         sg.Column([[
-                            HUNT_MENU_FRAME, DATA_FRAME
+                            sg.Column([
+                                [HUNT_MENU_FRAME],
+                                [sg.Button("Direct Query", key="-DIRECT_QUERY-")]
+                            ]), DATA_FRAME
                         ]], key="-INNER_MAINFRAME-"),
                     ]],
                     key='-MAINFRAME-'
@@ -591,6 +594,9 @@ class PuzzlehuntGUI(object):
             elif event == "-SAVE_LAYOUT-":
                 self._save_layout()
 
+            elif event == "-DIRECT_QUERY-":
+                self._direct_query()
+
             elif event in self.TABLES:
                 if values[event]:
                     # from IPython import embed; embed()
@@ -688,7 +694,7 @@ class PuzzlehuntGUI(object):
             cursor.execute("INSERT INTO puzzledb.puzzlehunts (huntid,huntname,theme,starttime,endtime) VALUES (%s,'Undefined','Undefined','01-01-1970 00:00:01.000000','01-01-1970 00:00:01.000000');", (newhuntid,))
             for key in self.DEFAULT_HUNT_INFOSTRINGS:
                 cursor.execute("""INSERT INTO puzzledb.puzzlehunt_text_strings (huntid,textkey,textstring) VALUES (%s,%s,'Undefined');""", (newhuntid, key))
-            sg.popup("Successful!")
+            # sg.popup("Successful!")
         except Exception as e:
             sg.popup_error("Failed to add hunt! Error:", e)
         self.refresh_hunt_table()
@@ -713,7 +719,7 @@ class PuzzlehuntGUI(object):
                 cursor.execute("DELETE FROM puzzledb.puzzlehunt_faq WHERE huntid = %s", (hunt,))
                 cursor.execute("DELETE FROM puzzledb.puzzlehunt_errata WHERE huntid = %s", (hunt,))
                 cursor.execute("DELETE FROM puzzledb.puzzlehunt_team_applications WHERE huntid = %s", (hunt,))
-                sg.popup("Successful!")
+                # sg.popup("Successful!")
                 self._huntid = None
                 self.fill_huntinfo_input("","","","","")
                 self._populate_initial_data()
@@ -757,7 +763,7 @@ class PuzzlehuntGUI(object):
                     (huntid,puzzleid,name,description,relatedlink,points,requiredpoints,answer) 
                     VALUES (%s,%s,'Undefined','Undefined','http://undefined',0,0,'Undefined');""",
                 (self._huntid, new_puz_id,))
-            sg.popup("Successful!")
+            # sg.popup("Successful!")
         except Exception as e:
             sg.popup_error("Failed to add puzzle! Error:", e)
         self.db_get_puzzles()
@@ -777,7 +783,7 @@ class PuzzlehuntGUI(object):
             try:
                 cursor = self.sql_db.cursor()
                 cursor.execute("DELETE FROM puzzledb.puzzlehunt_puzzles WHERE puzzleid = %s", (puz_id,))
-                sg.popup("Successful!")
+                # sg.popup("Successful!")
             except Exception as e:
                 sg.popup_error("Failed to delete puzzle! Error:", e)
         self.db_get_puzzles()
@@ -830,7 +836,7 @@ class PuzzlehuntGUI(object):
                     (huntid,puzzleid,partialanswer,response) 
                     VALUES (%s,%s,%s,'You''re on the right track!');""",
                 (self._huntid, self._data["Puzzles"][self._selected["Puzzle"]][0], new_partial_trigger))
-            sg.popup("Successful!")
+            # sg.popup("Successful!")
         except Exception as e:
             sg.popup_error("Failed to add partial answer! Error:", e)
         self.db_get_puzzles()
@@ -864,7 +870,7 @@ class PuzzlehuntGUI(object):
             try:
                 cursor = self.sql_db.cursor()
                 cursor.execute("DELETE FROM puzzledb.puzzlehunt_puzzle_partials WHERE puzzleid = %s AND partialanswer = %s", (puzzleid, trigger))
-                sg.popup("Successful!")
+                # sg.popup("Successful!")
             except Exception as e:
                 sg.popup_error("Failed to delete partial answer! Error:", e)
         self.db_get_puzzles()
@@ -923,7 +929,7 @@ class PuzzlehuntGUI(object):
                     (id,huntid,question,content) 
                     VALUES (%s,%s,'Undefined','Undefined');""",
                 (faq_id, self._huntid,))
-            sg.popup("Successful!")
+            # sg.popup("Successful!")
         except Exception as e:
             sg.popup_error("Failed to add FAQ! Error:", e)
         self.db_get_faq()
@@ -943,7 +949,7 @@ class PuzzlehuntGUI(object):
             try:
                 cursor = self.sql_db.cursor()
                 cursor.execute("DELETE FROM puzzledb.puzzlehunt_faq WHERE id = %s", (faq_id,))
-                sg.popup("Successful!")
+                # sg.popup("Successful!")
             except Exception as e:
                 sg.popup_error("Failed to delete FAQ! Error:", e)
         self.db_get_faq()
@@ -980,7 +986,7 @@ class PuzzlehuntGUI(object):
                     (huntid,puzzleid,content) 
                     VALUES (%s,%s,'Undefined');""",
                 (self._huntid, puz_id,))
-            sg.popup("Successful!")
+            # sg.popup("Successful!")
         except Exception as e:
             sg.popup_error("Failed to add erratum! Error:", e)
         self.db_get_errata()
@@ -1000,7 +1006,7 @@ class PuzzlehuntGUI(object):
             try:
                 cursor = self.sql_db.cursor()
                 cursor.execute("DELETE FROM puzzledb.puzzlehunt_errata WHERE id = %s", (erratum_id,))
-                sg.popup("Successful!")
+                # sg.popup("Successful!")
             except Exception as e:
                 sg.popup_error("Failed to delete erratum! Error:", e)
         self.db_get_errata()
@@ -1255,6 +1261,17 @@ class PuzzlehuntGUI(object):
         self.window["-PARTIAL_PUZZLE_INP-"].update(value=puzid)
         self.window["-PARTIAL_TRIGGER_INP-"].update(value=trigger)
         self.window["-PARTIAL_RESPONSE_INP-"].update(value=response)
+
+    def _direct_query(self):
+        query = sg.popup_get_text("[DANGER] Directly query the database. Hope you know what you're doing.")
+        if query == "Cancel":
+            return
+        try:
+            self.sql_db.cursor().execute(query)
+            # sg.popup("Successful!")
+        except Exception as e:
+            sg.popup_error("Query failed! Error:", e)
+
 
 
 if __name__ == '__main__':
