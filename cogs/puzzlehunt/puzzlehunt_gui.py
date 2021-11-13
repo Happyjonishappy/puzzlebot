@@ -6,7 +6,7 @@ import PySimpleGUI as sg
 from json import load, dump
 from datetime import datetime
 
-POSTGRESQL_SERVER = "postgresql://theducvu@localhost:5432/theducvu"
+POSTGRESQL_SERVER = "postgresql://username@localhost:5432/database"
 re_match = re.compile(r".*@([A-z0-9]*:[0-9]*\/[A-z0-9]*)").match(POSTGRESQL_SERVER)
 server_shorthand = re_match.groups()[0] if re_match else POSTGRESQL_SERVER
 
