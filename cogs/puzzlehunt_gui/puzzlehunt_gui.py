@@ -432,7 +432,7 @@ class PuzzlehuntGUI(object):
                         sg.Column([[
                             sg.Column([
                                 [HUNT_MENU_FRAME],
-                                [sg.Button("Direct Query", key="-DIRECT_QUERY-")]
+                                [sg.Button("Direct Query", button_color="red", key="-DIRECT_QUERY-")]
                             ]), DATA_FRAME
                         ]], key="-INNER_MAINFRAME-"),
                     ]],
@@ -1268,7 +1268,7 @@ class PuzzlehuntGUI(object):
             return
         try:
             self.sql_db.cursor().execute(query)
-            # sg.popup("Successful!")
+            sg.popup("Successful!")
         except Exception as e:
             sg.popup_error("Query failed! Error:", e)
 
